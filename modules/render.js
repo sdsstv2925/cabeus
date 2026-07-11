@@ -1,0 +1,79 @@
+/**
+ * RENDERING ENGINE
+ * All UI rendering functions
+ */
+
+const RenderEngine = {
+  renderCard(p) {
+    try {
+      const qid = 'q' + p.id;
+      const max = getMaxAvailable(p);
+      const u = getUnit(p);
+      return `
+        <div class="card product-card-final">
+          <div class="product-card-photo" onclick="RouterEngine.openProduct(${p.id})"></div>
+          <div class="card-main">
+            <div class="name" onclick="RouterEngine.openProduct(${p.id})">${esc(p.name)}</div>
+            <div class="code-stock">
+              <span class="code">код ${esc(p.code)}</span>
+              ${getStockChip(p)}
+            </div>
+          </div>
+          <div class="card-buy">
+            <div class="price">Цена: ${formatMoney(p.price)}</div>
+            <div class="qty-wrap">
+              <button type="button" onclick="window.qtyStep('${qid}', -1)" ${max <= 0 ? 'disabled' : ''}>−</button>
+              <input id="${qid}" type="number" value="1" min="1" max="${max}" ${max <= 0 ? 'disabled' : ''}>
+              <button type="button" onclick="window.qtyStep('${qid}', 1)" ${max <= 0 ? 'disabled' : ''}>+</button>
+            </div>
+            <button class="btn" onclick="CartManager.add(${p.id}, parseInt(document.getElementById('${qid}').value || 1))" ${max <= 0 ? 'disabled' : ''}>В корзину</button>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      console.error('RenderEngine.renderCard error:', e);
+      return '';
+    }
+  },
+
+  renderCatalog() {
+    try {
+      const start = (page - 1) * PAGE_SIZE;
+      const list = filtered.slice(start, start + PAGE_SIZE);
+      const products = document.getElementById('products');
+      if (products) {
+        products.innerHTML = list.map(p => this.renderCard(p)).join('');
+      }
+      const resultCount = document.getElementById('resultCount');
+      if (resultCount) resultCount.textContent = filtered.length.toLocaleString('ru-RU');
+    } catch (e) {
+      console.error('RenderEngine.renderCatalog error:', e);
+    }
+  },
+
+  renderPager() {
+    try {
+      const pages = Math.ceil(filtered.length / PAGE_SIZE);
+      const pager = document.getElementById('pager');
+      if (!pager || pages <= 1) return;
+      let html = '';
+      for (let i = 1; i <= pages; i++) {
+        if (i === page) {
+          html += `<button class="pager-btn active">${i}</button>`;
+        } else {
+          html += `<button class="pager-btn" onclick="RouterEngine.setCatalogPage(${i})">${i}</button>`;
+        }
+      }
+      pager.innerHTML = html;
+    } catch (e) {
+      console.error('RenderEngine.renderPager error:', e);
+    }
+  },
+
+  render() {
+    this.renderCatalog();
+    this.renderPager();
+  }
+};
+
+window.RenderEngine = RenderEngine;

@@ -1,0 +1,90 @@
+/**
+ * FILTERING & SEARCH ENGINE
+ * All filtering logic with proper scoping
+ */
+
+let filtered = [];
+let currentSection = '';
+let currentSubsection = '';
+let page = 1;
+const PAGE_SIZE = 48;
+
+const FilterEngine = {
+  scopedProducts() {
+    const sec = document.getElementById('sectionFilter')?.value || currentSection || '';
+    const sub = document.getElementById('subFilter')?.value || currentSubsection || '';
+    return PRODUCTS.filter(p => (!sec || p.section === sec) && (!sub || p.subsection === sub));
+  },
+
+  matchesSearch(p, q) {
+    if (!q) return true;
+    const cq = compactKey(q);
+    if (compactKey(p.code).includes(cq) || compactKey(p.article).includes(cq)) return true;
+    const tokens = searchTokens(q);
+    if (!tokens.length) return true;
+    const text = `${p.code} ${p.article} ${p.name} ${p.type} ${p.section} ${p.subsection}`.toLowerCase();
+    return tokens.every(t => text.includes(t));
+  },
+
+  applyFilters() {
+    try {
+      const search = (document.getElementById('search')?.value || '').trim();
+      const sec = document.getElementById('sectionFilter')?.value || currentSection || '';
+      const sub = document.getElementById('subFilter')?.value || currentSubsection || '';
+      const type = document.getElementById('typeFilter')?.value || '';
+      const stock = document.getElementById('stockFilter')?.value || '';
+      const warranty = document.getElementById('warrantyFilter')?.value || '';
+      const minPrice = Number(document.getElementById('minPrice')?.value || 0);
+      const maxPrice = document.getElementById('maxPrice')?.value ? Number(document.getElementById('maxPrice').value) : Infinity;
+
+      filtered = PRODUCTS.filter(p => {
+        if (sec && p.section !== sec) return false;
+        if (sub && p.subsection !== sub) return false;
+        if (type && p.type !== type) return false;
+        if (warranty && p.warranty !== warranty) return false;
+        if (Number(p.price || 0) < minPrice || Number(p.price || 0) > maxPrice) return false;
+        if (stock) {
+          const qty = Number(p.qty || 0);
+          const transit = Number(p.transit || 0);
+          if (stock === 'stock' && qty <= 0) return false;
+          if (stock === 'transit' && (qty > 0 || transit <= 0)) return false;
+          if (stock === 'order' && (qty > 0 || transit > 0)) return false;
+        }
+        if (search && !this.matchesSearch(p, search)) return false;
+        return true;
+      });
+
+      page = 1;
+      return filtered;
+    } catch (e) {
+      console.error('FilterEngine.applyFilters error:', e);
+      return [];
+    }
+  },
+
+  updateDynamicFilters() {
+    try {
+      const pool = this.scopedProducts();
+      const typeFilter = document.getElementById('typeFilter');
+      const warrantyFilter = document.getElementById('warrantyFilter');
+      
+      if (typeFilter) {
+        typeFilter.innerHTML = '<option value="">Любой тип</option>' + 
+          unique(pool, 'type').map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+      }
+      if (warrantyFilter) {
+        warrantyFilter.innerHTML = '<option value="">Любая</option>' + 
+          unique(pool, 'warranty').map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+      }
+    } catch (e) {
+      console.error('FilterEngine.updateDynamicFilters error:', e);
+    }
+  }
+};
+
+window.FilterEngine = FilterEngine;
+window.filtered = filtered;
+window.currentSection = currentSection;
+window.currentSubsection = currentSubsection;
+window.page = page;
+window.PAGE_SIZE = PAGE_SIZE;
