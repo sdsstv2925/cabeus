@@ -3,7 +3,7 @@
  * All shopping cart operations with validation
  */
 
-let cart = storage.get('cabeusCart', {});
+let cart = storage.get('cabeusCartFull', {});
 
 const CartManager = {
   add(id, quantity = 1) {
@@ -62,7 +62,7 @@ const CartManager = {
 
   save() {
     try {
-      storage.set('cabeusCart', cart);
+    storage.set('cabeusCartFull', cart);
     } catch (e) {
       console.error('CartManager.save error:', e);
     }
