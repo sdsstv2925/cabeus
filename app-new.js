@@ -14,7 +14,7 @@
 
 /* ─── View state ─────────────────────────────────────────────────── */
 
-let view = storage.get('cabeusView') || localStorage.getItem('cabeusView') || 'grid';
+let view = storage.get('cabeusView') || 'grid';
 
 /* ─── Smart search (complete implementation) ─────────────────────── */
 
@@ -89,8 +89,8 @@ FilterEngine.applyFilters = function () {
     const sh = document.getElementById('shieldFilter')?.value || '';
     const color = document.getElementById('colorFilter')?.value || '';
     const depth = document.getElementById('depthFilter')?.value || '';
-    const minP = +((document.getElementById('minPrice')?.value) || 0) || 0;
-    const maxP = +((document.getElementById('maxPrice')?.value) || 0) || Infinity;
+    const minP = +(document.getElementById('minPrice')?.value || 0) || 0;
+    const maxP = +(document.getElementById('maxPrice')?.value || 0) || Infinity;
 
     filtered = PRODUCTS.filter(p =>
       matchesSmartSearch(p, q) &&
@@ -206,12 +206,10 @@ function onSubsectionChange() {
 }
 
 function clearFilters() {
-  document.querySelectorAll('.filters input, .filters select').forEach(el => { el.value = ''; });
-  const sectionFilter = document.getElementById('sectionFilter');
-  if (sectionFilter) sectionFilter.value = currentSection || '';
-  onSectionChange();
-  const subFilter = document.getElementById('subFilter');
-  if (subFilter) subFilter.value = currentSubsection || '';
+  // Clear refinement filters but preserve section/subsection navigation context
+  document.querySelectorAll(
+    '.filters input:not(#sectionFilter):not(#subFilter), .filters select:not(#sectionFilter):not(#subFilter)'
+  ).forEach(el => { el.value = ''; });
   updateFilterSummary();
   FilterEngine.applyFilters();
   render();
@@ -231,7 +229,6 @@ function toggleFilterPanel() {
 function setView(v) {
   view = v === 'list' ? 'list' : 'grid';
   storage.set('cabeusView', view);
-  localStorage.setItem('cabeusView', view);
   const container = document.getElementById('products');
   if (container) { container.classList.remove('grid', 'list'); container.classList.add(view); }
   const gb = document.getElementById('gridBtn'), lb = document.getElementById('listBtn');
@@ -434,6 +431,7 @@ function requestText() {
 }
 
 function updateEmailLink() {
+  // Deferred to ensure requestText() reads the latest comment value after DOM update
   setTimeout(() => {
     const emailLink = document.getElementById('emailLink');
     if (emailLink) {
@@ -491,7 +489,12 @@ function openProduct(id) {
   const p = PRODUCTS[id];
   if (!p) return;
   const specs = cleanSpecs(p);
-  const shortN = String(p.name || '').replace(/^Cabeus\s+/i, '').replace(String(p.article || ''), '').replace(/\s+/g, ' ').trim();
+  // Remove brand prefix and article from display name; escape any regex metacharacters in article
+  const articleEscaped = String(p.article || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const shortN = String(p.name || '')
+    .replace(/^Cabeus\s+/i, '')
+    .replace(articleEscaped ? new RegExp(articleEscaped, 'g') : /(?!x)x/, '')
+    .replace(/\s+/g, ' ').trim();
   const photo = p.img ? `<div class="product-detail-photo"><img src="${p.img}" alt="${esc(p.name || p.article || '')}"></div>` : '';
   const productContent = document.getElementById('productContent');
   if (!productContent) return;
