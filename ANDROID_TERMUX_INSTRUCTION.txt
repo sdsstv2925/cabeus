@@ -1,0 +1,19 @@
+ANDROID v5 FAST
+
+cd ~/storage/downloads
+rm -rf cabeus-loader
+unzip cabeus-site-tinko-android-fast-index-v5.zip -d cabeus-loader
+cd cabeus-loader
+pip install -r requirements-android.txt
+termux-wake-lock
+
+Тест и построение индекса:
+python tinko_android_import.py --reset-state --rebuild-index --max-pages 5
+
+Если индекс работает, полный запуск:
+python tinko_android_import.py --all --resume --max-pages 120
+
+Если остановится:
+cd ~/storage/downloads/cabeus-loader
+termux-wake-lock
+python tinko_android_import.py --all --resume --max-pages 120
