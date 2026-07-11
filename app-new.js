@@ -431,15 +431,12 @@ function requestText() {
 }
 
 function updateEmailLink() {
-  // Deferred to ensure requestText() reads the latest comment value after DOM update
-  setTimeout(() => {
-    const emailLink = document.getElementById('emailLink');
-    if (emailLink) {
-      emailLink.href = 'mailto:sales@cabeus.ru?subject=' +
-        encodeURIComponent('Заявка на счет Cabeus') +
-        '&body=' + encodeURIComponent(requestText());
-    }
-  }, 0);
+  const emailLink = document.getElementById('emailLink');
+  if (emailLink) {
+    emailLink.href = 'mailto:sales@cabeus.ru?subject=' +
+      encodeURIComponent('Заявка на счет Cabeus') +
+      '&body=' + encodeURIComponent(requestText());
+  }
 }
 
 function copyRequest() {
@@ -489,12 +486,13 @@ function openProduct(id) {
   const p = PRODUCTS[id];
   if (!p) return;
   const specs = cleanSpecs(p);
-  // Remove brand prefix and article from display name; escape any regex metacharacters in article
-  const articleEscaped = String(p.article || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const shortN = String(p.name || '')
-    .replace(/^Cabeus\s+/i, '')
-    .replace(articleEscaped ? new RegExp(articleEscaped, 'g') : /(?!x)x/, '')
-    .replace(/\s+/g, ' ').trim();
+  // Remove brand prefix and article from display name; escape regex metacharacters in article
+  let shortN = String(p.name || '').replace(/^Cabeus\s+/i, '');
+  if (p.article) {
+    const articleEscaped = String(p.article).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    shortN = shortN.replace(new RegExp(articleEscaped, 'g'), '');
+  }
+  shortN = shortN.replace(/\s+/g, ' ').trim();
   const photo = p.img ? `<div class="product-detail-photo"><img src="${p.img}" alt="${esc(p.name || p.article || '')}"></div>` : '';
   const productContent = document.getElementById('productContent');
   if (!productContent) return;
